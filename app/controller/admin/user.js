@@ -206,19 +206,24 @@ class UsersController extends Controller {
                 }else{
                     data.Toptime = res.Time   //置顶天数
                     data.Topplacement = formData.checked2  //是否置顶
-                    await this.app.mysql.insert('order',
+                    data.status = 1
+                    // data.out_trade_no = idd
+
+                    await this.app.mysql.insert('article',data);
+
+
+                    await this.app.mysql.insert('tbk_order',
                         {
                             name:"发布文章",
                             price:Number(res.Price),
                             time:moment().format("YYYY-MM-DD HH:mm:ss"),
                             commodityid:452423335,
                             status:1, //1未支付
-                            out_trade_no:idd
-                        });
+                            out_trade_no:idd,
+                            typeId:data.radio3,
 
-                    console.log('发布文章订单新增成功' + moment().format("YYYY-MM-DD HH:mm:ss"))
+                        });
                     const e = await this.buy(res,formData.paytype,idd)
-                    await this.app.mysql.insert('article',data);
                     this.ctx.body = {
                         e
                     }
@@ -287,10 +292,9 @@ class UsersController extends Controller {
      * @returns {Promise<void>}
      */
     async topics(ctx){
-        var data = await this.app.mysql.query(`select * from article  order by Topplacement desc limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+        var data = await this.app.mysql.query(`select * from article where status <> 1 order by Topplacement desc limit 10 offset ${Number(this.ctx.query.page) * 10}`);
         for (let i=0;i<data.length;i++){
                 if(data[i].Toptime != null){
-
                     const AA = moment().format("YYYY-MM-DD HH:mm:ss");//当前时间
                     const BB = data[i].Toptime; //文章时间
                     const start_date = moment(AA,"YYYY-MM-DD HH:mm:ss");
@@ -340,10 +344,11 @@ class UsersController extends Controller {
      */
     async BuyPost(ctx){
         let formData = ctx.request.body
-        const result = await this.app.curl(`http://pay.hackwl.cn/api.php?act=order&pid=23940&key=8yJ86Z4yu3o8NMyce6OepZxoNJXjK8NE&out_trade_no=${formData.out_trade_no}`,{dataType: 'json',})
+        const result = await this.app.curl(`http://52ypay.com/api.php?act=order&pid=497886&key=2E5A92837C83E6AD4886F1157D02C586&out_trade_no=${formData.out_trade_no}`,{dataType: 'json',})
         if(result.data.code == 1 && result.data.status ==1){
-            console.log('订单支付成功')
-            const admina = await this.app.mysql.get('order', {out_trade_no:formData.out_trade_no});
+            const admina = await this.app.mysql.get('tbk_order', {out_trade_no:formData.out_trade_no});
+            await this.app.mysql.query(`update article  set status = 0  where out_trade_no = ${formData.out_trade_no}`);
+
             const data = await this.PayCallback(admina) //进入支付回调系统
             this.ctx.body = data
         }else{
@@ -357,9 +362,9 @@ class UsersController extends Controller {
      * 支付回调系统
      */
     async PayCallback(data){
-        if(data.commodityid ==452423335){
+        //开通会员
+        if(data.commodityid ==432423432){
             try{
-
                 let token = this.ctx.headers.authorization;
                 let sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
                 const db = await this.app.mysql.get('MemberSetmeal',{id:data.typeId});
@@ -371,7 +376,6 @@ class UsersController extends Controller {
                     Daymember:moment().add(Number(db.Time), 'd').format("YYYY-MM-DD HH:mm:ss"), //到期时间
                     privilegename:db.name
                 };
-                console.log(db)
                 const options = {
                     where: {
                         tbk_user_Username: sec2.username
@@ -381,18 +385,16 @@ class UsersController extends Controller {
                 const res = {
                     status: 0,
                     msg:"开通成功",
-                    url:'http://localhost:8089/user',
+                    url:'http://localhost:8089/?id=1',
                 }
                 return  res
             }catch (e) {
                 console.log(e)
             }
         }
+        if (data.commodityid ==452423335){
 
-
-        if (data.commodityid ==432423432){
             const db = await this.app.mysql.get('article', {out_trade_no:data.out_trade_no});
-
             const row = {
                 status: 0,
                 Toptime:moment().add(Number(db.Toptime), 'd').format("YYYY-MM-DD HH:mm:ss")
@@ -402,12 +404,16 @@ class UsersController extends Controller {
                     out_trade_no: data.out_trade_no
                 }
             };
-            const result = await this.app.mysql.update('article', row, options); // 更新 posts 表中的记录
-            console.log(result)
+            await this.app.mysql.update('article', row, options); // 更新 posts 表中的记录
+            const res = {
+                status: 0,
+                msg:"开通成功",
+                url:'http://localhost:8089/user',
+            }
+            return  res
+
         }
     }
-
-
     /**
      * 付费进入论坛
      * @param ctx
@@ -426,7 +432,7 @@ class UsersController extends Controller {
             notify_url:'/api/admin/v1/MemberBuyPost',
             id:id
         }
-        const data = await this.app.mysql.insert('order',
+        const data = await this.app.mysql.insert('tbk_order',
             {
                 name:"论坛会费",
                 price:Number(d),
@@ -460,10 +466,10 @@ class UsersController extends Controller {
     }
     async buyy(parameter){
         let data={
-            pid:"23940",
+            pid:"497886",
             money:parameter.price,
             name:parameter.name,
-            notify_url:`http://a9t1mlgh.xiaomy.net${parameter.notify_url}`,//异步通知地址
+            notify_url:`http://localhost:8089/pay`,//异步通知地址
             out_trade_no:parameter.id, //订单号,自己生成。我是当前时间YYYYMMDDHHmmss再加上随机三位数
             return_url:"http://localhost:8089/pay",//跳转通知地址
             sitename:"网站名称",
@@ -493,22 +499,29 @@ class UsersController extends Controller {
         }
         //对参数进行排序，生成待签名字符串--(具体看支付宝)
         let str=getVerifyParams(data);
-        let key="8yJ86Z4yu3o8NMyce6OepZxoNJXjK8NE";//密钥,易支付注册会提供pid和秘钥
+        let key="2E5A92837C83E6AD4886F1157D02C586";//密钥,易支付注册会提供pid和秘钥
         //MD5加密--进行签名
         let sign=utility.md5(str+key);//注意支付宝规定签名时:待签名字符串后要加key
         // 最后要将参数返回给前端，前端访问url发起支付
-        let result =`http://jk.hackwl.cn/submit.php?${str}&sign=${sign}&sign_type=MD5`;
+        let result =`http://52ypay.com/submit.php?${str}&sign=${sign}&sign_type=MD5`;
         console.log(data)
         return result
     }
+    /**
+     * 发布文章
+     * @param res
+     * @param paytype
+     * @param idd
+     * @returns {Promise<{result: string, out_trade_no: *, money: *, status: number}>}
+     */
     async buy(res,paytype,idd){
         let data={
-            pid:"23940",
+            pid:"497886",
             money:res.Price,
             name:"发布帖子",
-            notify_url:"http://a9t1mlgh.xiaomy.net/api/admin/v1/buyPost",//异步通知地址
+            notify_url:"http://localhost:8089/pay",//异步通知地址
             out_trade_no:idd, //订单号,自己生成。我是当前时间YYYYMMDDHHmmss再加上随机三位数
-            return_url:"http://localhost:8089/apy",//跳转通知地址
+            return_url:"http://localhost:8089/pay",//跳转通知地址
             sitename:"网站名称",
             type:paytype,//支付方式:alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通,
         }
@@ -536,11 +549,11 @@ class UsersController extends Controller {
         }
         //对参数进行排序，生成待签名字符串--(具体看支付宝)
         let str=getVerifyParams(data);
-        let key="8yJ86Z4yu3o8NMyce6OepZxoNJXjK8NE";//密钥,易支付注册会提供pid和秘钥
+        let key="2E5A92837C83E6AD4886F1157D02C586";//密钥,易支付注册会提供pid和秘钥
         //MD5加密--进行签名
         let sign=utility.md5(str+key);//注意支付宝规定签名时:待签名字符串后要加key
         // 最后要将参数返回给前端，前端访问url发起支付
-        let result =`http://pay.hackwl.cn/submit.php?${str}&sign=${sign}&sign_type=MD5`;
+        let result =`http://52ypay.com/submit.php?${str}&sign=${sign}&sign_type=MD5`;
         let datae = {
             result,
             money:res.Price,
