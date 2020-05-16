@@ -15,8 +15,10 @@ class UsersController extends Controller {
             tbk_user_Password:formData.tbk_user_Password,
             PostingNumber:2,
             headportrait:'head.jpg',
-            name:formData.tbk_user_Username,
-
+            name:formData.name,
+            Registrationdate:moment().locale('zh-cn').format('YYYY-MM-DD'),
+            invitation:formData.invitation ? formData.invitation : null,
+            money:0
         }
         const token = this.app.jwt.sign({
             username: data.tbk_user_Username,
@@ -97,7 +99,6 @@ class UsersController extends Controller {
             }
         };
         await this.app.mysql.update('tbk_user', row, optionss);
-
     }
     /**
      * 文章上传
@@ -268,19 +269,19 @@ class UsersController extends Controller {
      */
     async userinfo(ctx){
         try {
-            let token = ctx.headers.authorization;
-            let sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
-            const data = await this.app.mysql.get('tbk_user',
-                {
-                    tbk_user_Username:sec2.username
-                });
+            const token = ctx.headers.authorization;
+            const sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
+            const data = await this.app.mysql.query(`select *  from tbk_user where tbk_user_Username = ${sec2.username}`);
 
-            const info = await this.app.mysql.select('article',{where:{
-                userinfo:sec2.username
-                }});
+
+            const subordinate = await this.app.mysql.query(`select *  from tbk_user where invitation = ${sec2.username}`);
+
+
+            const info = await this.app.mysql.query(`select *  from article where userinfo = ${sec2.username} order by createtime desc`);
             this.ctx.body = {
                 data,
-                info
+                info,
+                subordinate
             }
         }catch (e) {
             console.log(e)
@@ -292,7 +293,7 @@ class UsersController extends Controller {
      * @returns {Promise<void>}
      */
     async topics(ctx){
-        var data = await this.app.mysql.query(`select * from article where status <> 1 order by Topplacement desc limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+        var data = await this.app.mysql.query(`select * from article where status <> 1 order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
         for (let i=0;i<data.length;i++){
                 if(data[i].Toptime != null){
                     const AA = moment().format("YYYY-MM-DD HH:mm:ss");//当前时间
@@ -315,6 +316,10 @@ class UsersController extends Controller {
                     }
                 }
             }
+
+
+
+
         this.ctx.body = {
             data
         }
@@ -348,7 +353,6 @@ class UsersController extends Controller {
         if(result.data.code == 1 && result.data.status ==1){
             const admina = await this.app.mysql.get('tbk_order', {out_trade_no:formData.out_trade_no});
             await this.app.mysql.query(`update article  set status = 0  where out_trade_no = ${formData.out_trade_no}`);
-
             const data = await this.PayCallback(admina) //进入支付回调系统
             this.ctx.body = data
         }else{
@@ -362,11 +366,21 @@ class UsersController extends Controller {
      * 支付回调系统
      */
     async PayCallback(data){
-        //开通会员
+        const token = this.ctx.headers.authorization;
+        const sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
+        const user = await this.app.mysql.get('tbk_user', {tbk_user_Username: sec2.username});
+
+        console.log(user.invitation)
+
+        if(data.superiorentry == 1){
+            var price = (Number(user.Rechargequota))
+        }else{
+            await this.app.mysql.query(`update tbk_order  set superiorentry = 1  where out_trade_no = ${data.out_trade_no}`);
+            await this.app.mysql.query(`update tbk_user  set money = money + 1  where tbk_user_Username = ${user.invitation}`);
+            var price = (Number(user.Rechargequota) * 1000 + Number(data.price) * 1000)/1000
+        }
         if(data.commodityid ==432423432){
             try{
-                let token = this.ctx.headers.authorization;
-                let sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
                 const db = await this.app.mysql.get('MemberSetmeal',{id:data.typeId});
                 const row = {
                     Topping: db.Topping,   //板块指定
@@ -374,13 +388,9 @@ class UsersController extends Controller {
                     AllTopping: db.AllTopping,//全站置顶
                     Advertisingspace: db.Advertisingspace,//广告位
                     Daymember:moment().add(Number(db.Time), 'd').format("YYYY-MM-DD HH:mm:ss"), //到期时间
-                    privilegename:db.name
+                    Rechargequota:price
                 };
-                const options = {
-                    where: {
-                        tbk_user_Username: sec2.username
-                    }
-                };
+                const options = {where: {tbk_user_Username: sec2.username}};
                 await this.app.mysql.update('tbk_user', row, options);
                 const res = {
                     status: 0,
@@ -393,25 +403,25 @@ class UsersController extends Controller {
             }
         }
         if (data.commodityid ==452423335){
-
             const db = await this.app.mysql.get('article', {out_trade_no:data.out_trade_no});
             const row = {
                 status: 0,
                 Toptime:moment().add(Number(db.Toptime), 'd').format("YYYY-MM-DD HH:mm:ss")
             };
-            const options = {
-                where: {
-                    out_trade_no: data.out_trade_no
-                }
-            };
+            const options = {where: {out_trade_no: data.out_trade_no}};
             await this.app.mysql.update('article', row, options); // 更新 posts 表中的记录
+            const roww = {
+                Rechargequota:price
+            };
+            const optionss = {where: {tbk_user_Username: sec2.username}
+            };
+            await this.app.mysql.update('tbk_user', roww, optionss);
             const res = {
                 status: 0,
                 msg:"开通成功",
                 url:'http://localhost:8089/user',
             }
             return  res
-
         }
     }
     /**

@@ -6,7 +6,6 @@ var client = new ApiClient({
     'REST_URL':'http://api.daily.taobao.net/router/rest'
 });
 
-
 class api{
     index(apiname,params) {
         return new Promise(function(resolve,reject){
