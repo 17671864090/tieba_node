@@ -9,8 +9,17 @@ module.exports = (options, app) => {
 
 
         if(ctx.request.headers.authorization){
+
+
             try {
                 const data = ctx.app.jwt.verify(ctx.request.headers.authorization, 143700)
+
+                // let token = ctx.headers.authorization;
+                // let data = ctx.app.jwt.verify(token,ctx.app.config.jwt.secret)
+
+
+                console.log(data)
+
                 if(!data.username){
                     ctx.body = {
                         status: 502,

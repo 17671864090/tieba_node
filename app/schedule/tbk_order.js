@@ -4,7 +4,7 @@ class UpdateCache extends Subscription {
     // 通过 schedule 属性来设置定时任务的执行间隔等配置
     static get schedule() {
         return {
-            cron: '0 59 23 * * *', // 1 分钟间隔
+            cron: '0 0 6 * * *', // 1 分钟间隔
             type: 'all', // 指定所有的 worker 都需要执行
         };
     }
@@ -15,8 +15,8 @@ class UpdateCache extends Subscription {
     async subscribe() {
         const data = await this.app.mysql.query('SELECT * FROM `tbk_user` WHERE DATEDIFF(now(),Registrationdate) = 1')
         const data_log = {
-            time:moment().locale('zh-cn').add(-1, 'd').format('YYYY-MM-DD'),
-            createpeople:data.length
+            '日期':moment().locale('zh-cn').add(-1, 'd').format('YYYY-MM-DD'),
+            '注册人数':data.length
         }
         await this.app.mysql.insert('user_log', data_log);
 

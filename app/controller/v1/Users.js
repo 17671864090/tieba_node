@@ -100,5 +100,33 @@ class UsersController extends Controller {
             data
         }
     }
+    async adminLogin(ctx){
+
+        let formData = ctx.request.body
+
+        const admina = await this.app.mysql.get('tbk_admin_user',
+            {
+                tbk_admin_Username:formData.username,
+                tbk_admin_Password:formData.password,
+            });
+        if(admina){
+            const token = this.app.jwt.sign({
+                username: formData.username,
+                password: formData.username,
+            }, this.app.config.jwt.secret, {
+                expiresIn: '36000s',
+            })
+            this.ctx.body = {
+                status: 0,
+                token,
+                user:admina.tbk_admin_Username
+            }
+        }else{
+            this.ctx.body = {
+                status: 1,
+                msg:'密码错误'
+            }
+        }
+    }
 }
 module.exports = UsersController;

@@ -128,7 +128,7 @@ class UsersController extends Controller {
                 visit_count:0,
                 headportrait:formData.headportrait,
                 name:formData.name,
-                createtime:moment().format("YYYY-MM-DD HH:mm:ss"),
+                createtime:moment().utc().format("YYYY-MM-DD HH:mm:ss"),
                 platename:formData.platename,
             }
             if(formData.checked2!=0){
