@@ -88,7 +88,6 @@ class UsersController extends Controller {
             data
         }
     }
-
     /**
      * 提现审核
      * @returns {Promise<void>}

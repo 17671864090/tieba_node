@@ -37,13 +37,11 @@ class UsersController extends Controller {
                     tbk_user_Password:data.tbk_user_Password,
                 });
             if(!adminaa){
-                console.log('管理员登录密码错误');
                 this.ctx.body = {
                     status: 0,
                     success: '登录失败',
                 }
             }else {
-                console.log('管理员登录密码正确');
                 this.ctx.body = {
                     status: 1,
                     success: '登录成功',
@@ -52,7 +50,6 @@ class UsersController extends Controller {
             }
         }else{
             await this.app.mysql.insert('tbk_user',data);
-            console.log('注册成功');
             this.ctx.body = {
                 status: 1,
                 success: '注册成功',
@@ -112,15 +109,15 @@ class UsersController extends Controller {
             let formData = ctx.request.body
             let idd = (new Date()).valueOf()
             const data = {
-                content:formData.content,
-                imgname:JSON.stringify(formData.imgname),
-                mp4:JSON.stringify(formData.mp4),
-                phone:formData.phone,
+                content:formData.content, //文字内容
+                imgname:JSON.stringify(formData.imgname), //图片
+                mp4:JSON.stringify(formData.mp4), //视频
+                phone:formData.phone, //手机号
                 checked:formData.checked,
                 Topplacement:formData.Topplacement,
                 Toptime:formData.Toptime,  //置顶时间
                 radio3:formData.radio3,
-                status:1,
+                status:1, //状态
                 userinfo:sec2.username,
                 checked2:formData.checked2,  //是否置顶
                 time:'',
@@ -131,12 +128,13 @@ class UsersController extends Controller {
                 createtime:moment().utc().format("YYYY-MM-DD HH:mm:ss"),
                 platename:formData.platename,
             }
+
+            //判断是否免费发布
             if(formData.checked2!=0){
                 const res = await this.app.mysql.get('ArticlePrice',
                     {
                         ReleaseType:formData.checked2,
                         radio3:formData.radio3,
-
                     });
                 const info = await this.app.mysql.get('tbk_user',
                     {
@@ -161,17 +159,9 @@ class UsersController extends Controller {
                             data.Topplacement = formData.checked2  //是否置顶
                             data.status = 0
                             await this.app.mysql.insert('article',data);
-                            this.ctx.body = {
-                                e:{
-                                    status: 2,mas:'发布成功',
-                                }
-                            }
+                            this.ctx.body = {e:{status: 2,mas:'发布成功',}}
                         }else{
-                            this.ctx.body = {
-                                e:{
-                                    status: 1,mas:'免费置顶次数不足,请选择付费置顶',
-                                }
-                            }
+                            this.ctx.body = {e:{status: 1,mas:'免费置顶次数不足,请选择付费置顶',}}
                         }
                     } if(formData.checked2 ==2){
                         console.log('该文章为全站置顶发布')
@@ -204,15 +194,12 @@ class UsersController extends Controller {
 
                         }
                     }
+
                 }else{
                     data.Toptime = res.Time   //置顶天数
                     data.Topplacement = formData.checked2  //是否置顶
                     data.status = 1
-                    // data.out_trade_no = idd
-
                     await this.app.mysql.insert('article',data);
-
-
                     await this.app.mysql.insert('tbk_order',
                         {
                             name:"发布文章",
