@@ -24,7 +24,7 @@ class UsersController extends Controller {
             username: data.tbk_user_Username,
             password: data.tbk_user_Password,
         }, this.app.config.jwt.secret, {
-            expiresIn: '36000s',
+            expiresIn: '7d',
         })
         const admina = await this.app.mysql.get('tbk_user',
             {
