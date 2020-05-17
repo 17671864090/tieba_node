@@ -229,12 +229,17 @@ class UsersController extends Controller {
                     }
                 }
             }else{
+
+
+                const Info = await this.app.mysql.get('tbk_user', {tbk_user_Username:sec2.username});
+
+
                 if(Info.PostingNumber > 0){
                     data.Topplacement = 0
                     data.status = 0
                     data.time = moment().add(100, 'y').format("YYYY-MM-DD HH:mm:ss")
                     await this.app.mysql.insert('article',data);
-                    const Info = await this.app.mysql.get('tbk_user', {tbk_user_Username:sec2.username});
+
                     const row = {
                         PostingNumber:Info.PostingNumber - 1,
                     };
@@ -266,7 +271,7 @@ class UsersController extends Controller {
 
 
     /**
-     * 分类获取
+     *
      * @param ctx
      * @returns {Promise<void>}
      */
@@ -352,6 +357,7 @@ class UsersController extends Controller {
             data
         }
     }
+
     /**
      * 获取文章详情
      * @param ctx
