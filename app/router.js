@@ -6,7 +6,11 @@ module.exports = app => {
   //物料精选{相似推荐,猜你喜欢}
   router.get('/user/Optimus/:material_id/:min_ids', controller.home.Optimus);
   // router.get('/user/ItemInfo/:num_iids', controller.home.ItemInfo);
-  router.post('/user/TpwdCreate', controller.home.TpwdCreate);
+
+
+
+  router.get('/user/TpwdCreate', controller.home.TpwdCreate);
+
 
   router.get('/api/user/itemoptional/:q/:page_no', controller.home.itemoptional);
 

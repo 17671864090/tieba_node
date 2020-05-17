@@ -96,6 +96,10 @@ class UsersController extends Controller {
             }
         };
         await this.app.mysql.update('tbk_user', row, optionss);
+        this.ctx.body = {
+            status: 1,
+            msg:"修改成功"
+        }
     }
     /**
      * 文章上传
@@ -108,6 +112,7 @@ class UsersController extends Controller {
             let sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
             let formData = ctx.request.body
             let idd = (new Date()).valueOf()
+
             const data = {
                 content:formData.content, //文字内容
                 imgname:JSON.stringify(formData.imgname), //图片
@@ -128,9 +133,6 @@ class UsersController extends Controller {
                 createtime:moment().format("YYYY-MM-DD HH:mm:ss"),
                 platename:formData.platename,
             }
-
-            var nowTime = new Date();
-            //判断是否免费发布
             if(formData.checked2!=0){
                 const res = await this.app.mysql.get('ArticlePrice',
                     {
@@ -164,54 +166,65 @@ class UsersController extends Controller {
                         }else{
                             this.ctx.body = {e:{status: 1,mas:'免费置顶次数不足,请选择付费置顶',}}
                         }
-                    } if(formData.checked2 ==2){
-                        console.log('该文章为全站置顶发布')
+                    }
+                    if(formData.checked2 ==2){
                         if(info.AllTopping>0){
                             const row = {
                                 PostingNumber:Number(info.PostingNumber) - 1,
                                 AllTopping:Number(info.AllTopping) - 1,
                             };
-                            const options = {
-                                where: {
-                                    tbk_user_Username: sec2.username
-                                }
-                            };
+                            const options = {where: {tbk_user_Username: sec2.username}};
+
                             await this.app.mysql.update('tbk_user', row, options);
                             data.Toptime = moment().add(1, 'd').format("YYYY-MM-DD HH:mm:ss")  //置顶天数
                             data.Topplacement = formData.checked2  //是否置顶
                             data.status = 0
                             await this.app.mysql.insert('article',data);
-                            this.ctx.body = {
-                                e:{
-                                    status: 2,mas:'发布成功',
-                                }
-                            }
+                            this.ctx.body = {e:{status: 2,mas:'发布成功',}}
                         }else{
-                            this.ctx.body = {
-                                e:{
-                                    status: 1,mas:'免费置顶次数不足,请选择付费置顶',
-                                }
-                            }
+                            this.ctx.body = {e:{status: 1,mas:'免费置顶次数不足,请选择付费置顶',}}}
+                    }
+                    if(formData.checked2 ==3){
+                        if(info.Advertisingspace>0){
+                            const row = {
+                                PostingNumber:Number(info.PostingNumber) - 1,
+                                Advertisingspace:Number(info.Advertisingspace) - 1,
+                            };
+                            const options = {where: {tbk_user_Username: sec2.username}};
 
-                        }
+                            await this.app.mysql.update('tbk_user', row, options);
+
+                            data.Toptime = moment().add(1, 'd').format("YYYY-MM-DD HH:mm:ss")  //置顶天数
+                            data.Topplacement = formData.checked2
+                            data.status = 0
+                            const id = await this.app.mysql.insert('article',data);
+
+                            await this.app.mysql.insert('Advertisingspace', { ArticleID: id.insertId , content:formData.abbreviationcontent , Expirationdate:moment().add(1, 'd').format("YYYY-MM-DD HH:mm:ss") , status :0});
+                            this.ctx.body = {e:{status: 2,mas:'广告成功',}}
+                        }else{
+                            this.ctx.body = {e:{status: 1,mas:'广告置顶次数不足,请选择付费置顶',}}}
                     }
 
                 }else{
-                    data.Toptime = res.Time   //置顶天数
-                    data.Topplacement = formData.checked2  //是否置顶
-                    data.status = 1
-                    await this.app.mysql.insert('article',data);
-                    await this.app.mysql.insert('tbk_order',
-                        {
-                            name:"发布文章",
-                            price:Number(res.Price),
-                            time:moment().format("YYYY-MM-DD HH:mm:ss"),
-                            commodityid:452423335,
-                            status:1, //1未支付
-                            out_trade_no:idd,
-                            typeId:data.radio3,
 
-                        });
+                        data.Toptime = res.Time
+                        data.Topplacement = formData.checked2
+                        data.status = 1
+                        const id = await this.app.mysql.insert('article',data);
+                        await this.app.mysql.insert('tbk_order',
+                            {
+                                name:"发布文章",
+                                price:Number(res.Price),
+                                time:moment().format("YYYY-MM-DD HH:mm:ss"),
+                                commodityid:452423335,
+                                status:1, //1未支付
+                                out_trade_no:idd,
+                                typeId:data.radio3,
+                            });
+
+                    if(formData.checked2 ==3){
+                        await this.app.mysql.insert('Advertisingspace', { ArticleID: id.insertId , content:formData.abbreviationcontent , timeNuber:data.radio3 , status :1});
+                    }
                     const e = await this.buy(res,formData.paytype,idd)
                     this.ctx.body = {
                         e
@@ -250,6 +263,34 @@ class UsersController extends Controller {
             }
         }
     }
+
+
+    async classification(ctx){
+        var data = await this.app.mysql.query(`select * from classification`);
+        ctx.body = {
+            data
+        }
+    }
+    /**
+     * 获取广告位
+     * @constructor
+     */
+    async Advertisingspace(){
+        var data = await this.app.mysql.query(`select * from Advertisingspace where status = 0`);
+        for (let i=0;i<data.length;i++){
+                const AA = moment().format("YYYY-MM-DD HH:mm:ss");//当前时间
+                const BB = data[i].Expirationdate; //文章时间
+                const start_date = moment(AA,"YYYY-MM-DD HH:mm:ss");
+                const end_date = moment(BB,"YYYY-MM-DD HH:mm:ss");
+                const seconds = end_date.diff(start_date,"seconds");
+                if(seconds < 0){
+                    await this.app.mysql.delete('Advertisingspace', {id: data[i].id});
+                }
+        }
+        this.ctx.body = {
+            data
+        }
+    }
     /**
      * 获取用户基本信息
      * @param ctx
@@ -261,9 +302,7 @@ class UsersController extends Controller {
             const sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
             const data = await this.app.mysql.query(`select *  from tbk_user where tbk_user_Username = ${sec2.username}`);
 
-
             const subordinate = await this.app.mysql.query(`select *  from tbk_user where invitation = ${sec2.username}`);
-
 
             const info = await this.app.mysql.query(`select *  from article where userinfo = ${sec2.username} order by createtime desc`);
             this.ctx.body = {
@@ -304,14 +343,16 @@ class UsersController extends Controller {
                     }
                 }
             }
-
-
-
-
         this.ctx.body = {
             data
         }
     }
+
+    /**
+     * 获取文章详情
+     * @param ctx
+     * @returns {Promise<void>}
+     */
     async topicsitem(ctx){
         var data = await this.app.mysql.query(`select *  from article where id = ${ctx.params.id}`);
 
@@ -358,14 +399,18 @@ class UsersController extends Controller {
         const sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
         const user = await this.app.mysql.get('tbk_user', {tbk_user_Username: sec2.username});
 
-        console.log(user.invitation)
+        const i = (Number(data.price) * 1000 * 0.1)/1000
 
         if(data.superiorentry == 1){
             var price = (Number(user.Rechargequota))
         }else{
             await this.app.mysql.query(`update tbk_order  set superiorentry = 1  where out_trade_no = ${data.out_trade_no}`);
-            await this.app.mysql.query(`update tbk_user  set money = money + 1  where tbk_user_Username = ${user.invitation}`);
-            var price = (Number(user.Rechargequota) * 1000 + Number(data.price) * 1000)/1000
+
+
+            if(user.invitation){
+                await this.app.mysql.query(`update tbk_user  set money = money + ${i}  where tbk_user_Username = ${user.invitation}`);
+                var price = (Number(user.Rechargequota) * 1000 + Number(data.price) * 1000)/1000
+            }
         }
         if(data.commodityid ==432423432){
             try{
@@ -397,13 +442,22 @@ class UsersController extends Controller {
                 Toptime:moment().add(Number(db.Toptime), 'd').format("YYYY-MM-DD HH:mm:ss")
             };
             const options = {where: {out_trade_no: data.out_trade_no}};
-            await this.app.mysql.update('article', row, options); // 更新 posts 表中的记录
-            const roww = {
-                Rechargequota:price
-            };
-            const optionss = {where: {tbk_user_Username: sec2.username}
-            };
+            await this.app.mysql.update('article', row, options);
+            const roww = {Rechargequota:price};
+            const optionss = {where: {tbk_user_Username: sec2.username}};
             await this.app.mysql.update('tbk_user', roww, optionss);
+
+
+            const time = moment().add(1, 'd').format("YYYY-MM-DD HH:mm:ss")
+
+            const rowww = {
+                status:0,
+                Expirationdate:time
+            };
+            const optionsss = {where: {ArticleID:db.id}};
+            await this.app.mysql.update('Advertisingspace', rowww, optionsss);
+
+
             const res = {
                 status: 0,
                 msg:"开通成功",
@@ -518,8 +572,10 @@ class UsersController extends Controller {
             money:res.Price,
             name:"发布帖子",
             notify_url:"http://tieba.yrun.top/pay",//异步通知地址
+            // notify_url:"http://127.0.0.1:8089/pay",//异步通知地址
             out_trade_no:idd, //订单号,自己生成。我是当前时间YYYYMMDDHHmmss再加上随机三位数
             return_url:"http://tieba.yrun.top/pay",//跳转通知地址
+            // return_url:"http://127.0.0.1:8089/pay",//跳转通知地址
             sitename:"网站名称",
             type:paytype,//支付方式:alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通,
         }

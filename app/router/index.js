@@ -11,5 +11,10 @@ module.exports = app =>{
     router.post('/api/admin/v1/buyPost', controller.admin.user.BuyPost);//获取用户基本信息
     router.post('/api/admin/v1/MemberBuy', controller.admin.user.MemberBuy);//贴吧入群系统
     router.post('/api/admin/v1/MemberBuyPost', controller.admin.user.MemberBuyPost);//贴吧回调
-    router.post('/api/admin/v1/Userinformation', controller.admin.user.Userinformation);//贴吧回调
+    router.post('/api/admin/v1/Userinformation' ,gzip, controller.admin.user.Userinformation);//贴吧回调
+
+    router.get('/api/admin/v1/Advertisingspace', controller.admin.user.Advertisingspace);
+
+
+    router.get('/api/admin/v1/Classification', controller.admin.user.classification);
 }
