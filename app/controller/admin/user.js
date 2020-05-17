@@ -129,9 +129,18 @@ class UsersController extends Controller {
                 platename:formData.platename,
             }
 
+            var nowTime = new Date();
 
-            console.log(data.createtime)
             console.log(moment().format("YYYY-MM-DD HH:mm:ss"))
+
+            console.log(moment().utc().format('YYYY-MM-DD HH:mm:ss'))
+
+            console.log(moment(nowTime).utc().format('YYYY-MM-DD HH:mm:ss'))
+
+            console.log('js时间' + new Date())
+
+            const today = moment();
+            console.log('js时间' + today)
 
 
             //判断是否免费发布
