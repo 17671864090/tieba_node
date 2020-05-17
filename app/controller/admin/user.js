@@ -131,16 +131,13 @@ class UsersController extends Controller {
 
             var nowTime = new Date();
 
-            console.log(moment().format("YYYY-MM-DD HH:mm:ss"))
+            console.log('1' + moment().format("YYYY-MM-DD HH:mm:ss"))
 
-            console.log(moment().utc().format('YYYY-MM-DD HH:mm:ss'))
 
-            console.log(moment(nowTime).utc().format('YYYY-MM-DD HH:mm:ss'))
+            console.log('2' + moment(nowTime).utc().format('YYYY-MM-DD HH:mm:ss'))
 
-            console.log('js时间' + new Date())
+            console.log('2' + new Date())
 
-            const today = moment();
-            console.log('js时间' + today)
 
 
             //判断是否免费发布
