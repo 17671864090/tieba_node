@@ -125,9 +125,14 @@ class UsersController extends Controller {
                 visit_count:0,
                 headportrait:formData.headportrait,
                 name:formData.name,
-                createtime:moment().utc().format("YYYY-MM-DD HH:mm:ss"),
+                createtime:moment().format("YYYY-MM-DD HH:mm:ss"),
                 platename:formData.platename,
             }
+
+
+            console.log(data.createtime)
+            console.log(moment().format("YYYY-MM-DD HH:mm:ss"))
+
 
             //判断是否免费发布
             if(formData.checked2!=0){
