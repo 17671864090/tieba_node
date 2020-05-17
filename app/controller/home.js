@@ -11,7 +11,7 @@ class HomeController extends Controller {
         var params =
             {
                 'adzone_id':'109983200394',
-                'material_id':this.ctx.params.material_id,  //类目
+                'material_id':this.ctx.params.material_id,  //类ssasa目
                 'page_size':10,
                 'page_no':Number(this.ctx.params.min_ids) //当前页数
             };
@@ -65,7 +65,7 @@ class HomeController extends Controller {
         const data = await tbk.index('taobao.tbk.dg.material.optional',params);
         this.ctx.body = {
             data,
-            code:1
+            code:12
         }
 
 
