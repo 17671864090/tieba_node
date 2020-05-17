@@ -131,12 +131,12 @@ class UsersController extends Controller {
 
             var nowTime = new Date();
 
-            console.log('1' + moment().format("YYYY-MM-DD HH:mm:ss"))
+            console.log('a' + moment().format("YYYY-MM-DD HH:mm:ss"))
 
 
-            console.log('2' + moment(nowTime).utc().format('YYYY-MM-DD HH:mm:ss'))
+            console.log('b' + moment(nowTime).utc().format('YYYY-MM-DD HH:mm:ss'))
 
-            console.log('2' + new Date())
+            console.log('c' + new Date())
 
 
 
