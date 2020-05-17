@@ -112,7 +112,6 @@ class UsersController extends Controller {
             let sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
             let formData = ctx.request.body
             let idd = (new Date()).valueOf()
-
             const data = {
                 content:formData.content, //文字内容
                 imgname:JSON.stringify(formData.imgname), //图片
@@ -206,7 +205,6 @@ class UsersController extends Controller {
                     }
 
                 }else{
-
                         data.Toptime = res.Time
                         data.Topplacement = formData.checked2
                         data.status = 1
@@ -231,12 +229,12 @@ class UsersController extends Controller {
                     }
                 }
             }else{
-                data.Topplacement = 0
-                data.status = 0
-                data.time = moment().add(100, 'y').format("YYYY-MM-DD HH:mm:ss")
-                await this.app.mysql.insert('article',data);
-                const Info = await this.app.mysql.get('tbk_user', {tbk_user_Username:sec2.username});
                 if(Info.PostingNumber > 0){
+                    data.Topplacement = 0
+                    data.status = 0
+                    data.time = moment().add(100, 'y').format("YYYY-MM-DD HH:mm:ss")
+                    await this.app.mysql.insert('article',data);
+                    const Info = await this.app.mysql.get('tbk_user', {tbk_user_Username:sec2.username});
                     const row = {
                         PostingNumber:Info.PostingNumber - 1,
                     };
@@ -254,6 +252,8 @@ class UsersController extends Controller {
                         e:{status: 1,mas:'发帖次数不足',}
                     }
                 }
+
+
             }
         }catch (e) {
             console.log(e)
@@ -265,6 +265,11 @@ class UsersController extends Controller {
     }
 
 
+    /**
+     * 分类获取
+     * @param ctx
+     * @returns {Promise<void>}
+     */
     async classification(ctx){
         var data = await this.app.mysql.query(`select * from classification`);
         ctx.body = {
@@ -347,7 +352,6 @@ class UsersController extends Controller {
             data
         }
     }
-
     /**
      * 获取文章详情
      * @param ctx
