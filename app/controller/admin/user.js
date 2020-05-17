@@ -230,9 +230,7 @@ class UsersController extends Controller {
                 }
             }else{
 
-
                 const Info = await this.app.mysql.get('tbk_user', {tbk_user_Username:sec2.username});
-
 
                 if(Info.PostingNumber > 0){
                     data.Topplacement = 0
@@ -257,8 +255,6 @@ class UsersController extends Controller {
                         e:{status: 1,mas:'发帖次数不足',}
                     }
                 }
-
-
             }
         }catch (e) {
             console.log(e)
