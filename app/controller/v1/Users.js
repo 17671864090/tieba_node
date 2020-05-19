@@ -1,5 +1,7 @@
 const Controller = require('egg').Controller;
 const moment = require('moment');
+const mm = require('egg-mock');
+const assert = require('assert');
 class UsersController extends Controller {
     /**
      * 获取帖子
@@ -126,6 +128,13 @@ class UsersController extends Controller {
                 msg:'密码错误'
             }
         }
+    }
+
+
+    async schedule(ctx){
+        console.log('执行定时任务')
+
+        await this.ctx.app.runSchedule('visitUrl');
     }
 }
 module.exports = UsersController;

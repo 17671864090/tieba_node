@@ -8,17 +8,21 @@ class UsersController extends Controller {
      * @param ctx
      * @returns {Promise<void>}
      */
-    async signIn(ctx){
+    async register(ctx){
         let formData = ctx.request.body
         const data = {
             tbk_user_Username:formData.tbk_user_Username,
             tbk_user_Password:formData.tbk_user_Password,
-            PostingNumber:2,
-            headportrait:'head.jpg',
+            PostingNumber:0,   //发帖
+            Topping:0,//置顶
+            AllTopping:0,//全站置顶
+            Advertisingspace:0,//广告
+            headportrait:formData.headportrait ? formData.headportrait : 'head.jpg',
             name:formData.name,
             Registrationdate:moment().locale('zh-cn').format('YYYY-MM-DD'),
             invitation:formData.invitation ? formData.invitation : null,
-            money:0
+            money:0,
+            vip:0
         }
         const token = this.app.jwt.sign({
             username: data.tbk_user_Username,
@@ -30,23 +34,13 @@ class UsersController extends Controller {
             {
                 tbk_user_Username:data.tbk_user_Username,
             });
+
+
+
         if(admina){
-            const adminaa = await this.app.mysql.get('tbk_user',
-                {
-                    tbk_user_Username:data.tbk_user_Username,
-                    tbk_user_Password:data.tbk_user_Password,
-                });
-            if(!adminaa){
-                this.ctx.body = {
-                    status: 0,
-                    success: '登录失败',
-                }
-            }else {
-                this.ctx.body = {
-                    status: 1,
-                    success: '登录成功',
-                    token
-                }
+            this.ctx.body = {
+                status: 0,
+                success: '注册失败,请换账号',
             }
         }else{
             await this.app.mysql.insert('tbk_user',data);
@@ -56,6 +50,42 @@ class UsersController extends Controller {
                 token
             }
         }
+    }
+
+    /**
+     * 登录
+     * @returns {Promise<void>}
+     */
+    async login(ctx){
+        let formData = ctx.request.body
+        const data = {
+            tbk_user_Username:formData.tbk_user_Username,
+            tbk_user_Password:formData.tbk_user_Password,
+        }
+        const token = this.app.jwt.sign({
+            username: data.tbk_user_Username,
+            password: data.tbk_user_Password,
+        }, this.app.config.jwt.secret, {
+            expiresIn: '7d',
+        })
+        const adminaa = await this.app.mysql.get('tbk_user',
+            {
+                tbk_user_Username:data.tbk_user_Username,
+                tbk_user_Password:data.tbk_user_Password,
+            });
+        if(!adminaa){
+            this.ctx.body = {
+                status: 0,
+                success: '登陆失败,请检查账号和密码',
+            }
+        }else {
+            this.ctx.body = {
+                status: 1,
+                success: '登录成功',
+                token
+            }
+        }
+
     }
     /**
      * 七牛云密钥
@@ -264,8 +294,6 @@ class UsersController extends Controller {
             }
         }
     }
-
-
     /**
      *
      * @param ctx
@@ -290,7 +318,10 @@ class UsersController extends Controller {
                 const end_date = moment(BB,"YYYY-MM-DD HH:mm:ss");
                 const seconds = end_date.diff(start_date,"seconds");
                 if(seconds < 0){
-                    await this.app.mysql.delete('Advertisingspace', {id: data[i].id});
+
+                    // await this.app.mysql.delete('Advertisingspace', {id: data[i].id});
+
+                    await this.app.mysql.query(`update article set  Topplacement = 0  where id = ${data[i].id}`);
                 }
         }
         this.ctx.body = {
@@ -326,41 +357,48 @@ class UsersController extends Controller {
      * @returns {Promise<void>}
      */
     async topics(ctx){
-        var data = await this.app.mysql.query(`select * from article where status <> 1 order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+
+        if(this.ctx.query.tab == 1){
+            var data = await this.app.mysql.query(`select * from article where status <> 1 order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+        }else{
+            var data = await this.app.mysql.query(`select * from article where status <> 1 and checked = ${this.ctx.query.tab} order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+        }
         for (let i=0;i<data.length;i++){
-                if(data[i].Toptime != null){
-                    const AA = moment().format("YYYY-MM-DD HH:mm:ss");//当前时间
-                    const BB = data[i].Toptime; //文章时间
-                    const start_date = moment(AA,"YYYY-MM-DD HH:mm:ss");
-                    const end_date = moment(BB,"YYYY-MM-DD HH:mm:ss");
-                    const seconds = end_date.diff(start_date,"seconds");
-                    if(seconds < 0){
-                        data[i].Topplacement = 0
-                        const row = {
-                            Topplacement: data[i].Topplacement,
-                            Toptime: null
-                        };
-                        const options = {
-                            where: {
-                                id: data[i].id
-                            }
-                        };
-                        await this.app.mysql.update('article', row, options);
-                    }
+            if(data[i].Toptime != null){
+                const AA = moment().format("YYYY-MM-DD HH:mm:ss");//当前时间
+                const BB = data[i].Toptime; //文章时间
+                const start_date = moment(AA,"YYYY-MM-DD HH:mm:ss");
+                const end_date = moment(BB,"YYYY-MM-DD HH:mm:ss");
+                const seconds = end_date.diff(start_date,"seconds");
+                if(seconds < 0){
+                    data[i].Topplacement = 0
+                    const row = {
+                        Topplacement: data[i].Topplacement,
+                        Toptime: null
+                    };
+                    const options = {
+                        where: {
+                            id: data[i].id
+                        }
+                    };
+                    await this.app.mysql.update('article', row, options);
                 }
             }
+        }
         this.ctx.body = {
             data
         }
     }
-
     /**
      * 获取文章详情
      * @param ctx
      * @returns {Promise<void>}
      */
     async topicsitem(ctx){
+        let formData = ctx.request.body
+
         var data = await this.app.mysql.query(`select *  from article where id = ${ctx.params.id}`);
+
 
         const row = {
             visit_count: Number(data[0].visit_count) + 1,
@@ -374,6 +412,69 @@ class UsersController extends Controller {
 
         this.ctx.body = {
             data
+        }
+    }
+    /**
+     * 更新文章置顶方式
+     * @param ctx
+     * @returns {Promise<void>}
+     */
+    async undatetopics(ctx){
+        let token = ctx.headers.authorization;
+        let sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
+        let formData = ctx.request.body
+        let idd = (new Date()).valueOf()
+        const res = await this.app.mysql.get('ArticlePrice',
+            {
+                ReleaseType:formData.checked2,
+                radio3:formData.radio3,
+            });
+        const info = await this.app.mysql.get('tbk_user',
+            {
+                tbk_user_Username:sec2.username,
+            });
+        if(formData.checked2!=0){
+            if(ctx.request.body.paytype == 'vippaytype'){
+
+            }else {
+                //更新置顶状态
+                await this.app.mysql.query(`update article set Topplacementstatus = ${formData.checked2} , time = ${res.Time} , out_trade_no = ${idd} where id = ${formData.id}`);
+
+                if(formData.checked2 == 1 || formData.checked2 == 2){
+                    //创建订单
+                    await this.app.mysql.insert('tbk_order',
+                        {
+                            name: "更新置顶",
+                            price: Number(res.Price),
+                            time: moment().format("YYYY-MM-DD HH:mm:ss"),
+                            commodityid: 412323335,
+                            status: 1, //1未支付
+                            out_trade_no: idd,
+                            typeId: formData.radio3,
+                        });
+                }
+                if (formData.checked2 == 3) {
+                    //创建订单
+                    await this.app.mysql.insert('tbk_order',
+                        {
+                            name: "更新置顶",
+                            price: Number(res.Price),
+                            time: moment().format("YYYY-MM-DD HH:mm:ss"),
+                            commodityid: 452423399,
+                            status: 1, //1未支付
+                            out_trade_no: idd,
+                            typeId: formData.radio3,
+                        });
+                    await this.app.mysql.insert('Advertisingspace', {
+                        ArticleID: formData.id,
+                        content: formData.abbreviationcontent,
+                        timeNuber: formData.radio3,
+                        status: 1
+                    });
+                }
+                const e = await this.buy(res, formData.paytype, idd)
+                this.ctx.body = {e}
+            }
         }
     }
     /**
@@ -404,36 +505,33 @@ class UsersController extends Controller {
         const token = this.ctx.headers.authorization;
         const sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
         const user = await this.app.mysql.get('tbk_user', {tbk_user_Username: sec2.username});
-
         const i = (Number(data.price) * 1000 * 0.1)/1000
-
         if(data.superiorentry == 1){
             var price = (Number(user.Rechargequota))
         }else{
-            await this.app.mysql.query(`update tbk_order  set superiorentry = 1  where out_trade_no = ${data.out_trade_no}`);
-
-
             if(user.invitation){
                 await this.app.mysql.query(`update tbk_user  set money = money + ${i}  where tbk_user_Username = ${user.invitation}`);
                 var price = (Number(user.Rechargequota) * 1000 + Number(data.price) * 1000)/1000
             }
         }
+
         if(data.commodityid ==432423432){
             try{
                 const db = await this.app.mysql.get('MemberSetmeal',{id:data.typeId});
                 const row = {
-                    Topping: db.Topping,   //板块指定
                     PostingNumber:db.PostingNumber,//发帖次数
+                    Topping: db.Topping,   //板块指定
                     AllTopping: db.AllTopping,//全站置顶
-                    Advertisingspace: db.Advertisingspace,//广告位
+                    Advertisingspace: db.Advertisingspace,//广告次数
                     Daymember:moment().add(Number(db.Time), 'd').format("YYYY-MM-DD HH:mm:ss"), //到期时间
                     Rechargequota:price
                 };
                 const options = {where: {tbk_user_Username: sec2.username}};
                 await this.app.mysql.update('tbk_user', row, options);
+                await this.app.mysql.query(`update tbk_user set PostingNumber = PostingNumber + ${db.PostingNumber} , Topping = Topping + ${db.Topping}  , AllTopping = AllTopping + ${db.AllTopping} , Advertisingspace = Advertisingspace + ${db.Advertisingspace} , vip = 1 , privilegename = '${db.name}' where tbk_user_Username = ${data.bindUserid}`);
                 const res = {
                     status: 0,
-                    msg:"开通成功",
+                    msg:"会员开通成功",
                     url:'http://localhost:8089/?id=1',
                 }
                 return  res
@@ -441,12 +539,13 @@ class UsersController extends Controller {
                 console.log(e)
             }
         }
-        if (data.commodityid ==452423335){
+        //板块全站置顶（广告位 2020年5月19日23:12:40 测试完成）
+        if(data.commodityid ==452423335){
             const db = await this.app.mysql.get('article', {out_trade_no:data.out_trade_no});
             const row = {
                 status: 0,
                 Toptime:moment().add(Number(db.Toptime), 'd').format("YYYY-MM-DD HH:mm:ss")
-            };
+            }
             const options = {where: {out_trade_no: data.out_trade_no}};
             await this.app.mysql.update('article', row, options);
             const roww = {Rechargequota:price};
@@ -454,15 +553,11 @@ class UsersController extends Controller {
             await this.app.mysql.update('tbk_user', roww, optionss);
 
 
-            const time = moment().add(1, 'd').format("YYYY-MM-DD HH:mm:ss")
-
-            const rowww = {
-                status:0,
-                Expirationdate:time
-            };
-            const optionsss = {where: {ArticleID:db.id}};
-            await this.app.mysql.update('Advertisingspace', rowww, optionsss);
-
+            if(db.Topplacement == 3){
+                const k = await this.app.mysql.get('Advertisingspace', {ArticleID:db.id});
+                const d = moment().add(Number(k.timeNuber), 'd').format("YYYY-MM-DD HH:mm:ss")
+                await this.app.mysql.query(`update Advertisingspace set status = 0 , Expirationdate = + "${d.toString()}" where ArticleID = ${Number(db.id)}`);
+            }
 
             const res = {
                 status: 0,
@@ -470,6 +565,57 @@ class UsersController extends Controller {
                 url:'http://localhost:8089/user',
             }
             return  res
+        }
+        //更新板块置顶  全站置顶（2020年5月19日23:12:40 测试完成）
+        if(data.commodityid ==412323335){
+            const db = await this.app.mysql.get('article', {out_trade_no:data.out_trade_no});
+            const row = {
+                Topplacement:db.Topplacementstatus,
+                status: 0,
+                Toptime:moment().add(Number(db.time), 'd').format("YYYY-MM-DD HH:mm:ss")
+            }
+
+            const options = {where: {out_trade_no: data.out_trade_no}};
+            await this.app.mysql.update('article', row, options);
+
+            const roww = {Rechargequota:price};
+            const optionss = {where: {tbk_user_Username: sec2.username}};
+            await this.app.mysql.update('tbk_user', roww, optionss);
+
+            const res = {
+                status: 0,
+                msg:"开通成功",
+                url:'http://localhost:8089/user',
+            }
+            return  res
+        }
+        //更新 广告位置顶（ 2020年5月19日23:12:40 测试完成）
+        if(data.commodityid ==452423399){
+            console.log('修改置顶')
+
+            const db = await this.app.mysql.get('article', {out_trade_no:data.out_trade_no});
+            const row = {
+                status: 0,
+                Topplacement:db.Topplacementstatus,
+                Toptime:moment().add(Number(db.time), 'd').format("YYYY-MM-DD HH:mm:ss")
+            };
+            const options = {where: {out_trade_no: data.out_trade_no}};
+            await this.app.mysql.update('article', row, options);
+
+            const roww = {Rechargequota:price};
+            const optionss = {where: {tbk_user_Username: sec2.username}};
+            await this.app.mysql.update('tbk_user', roww, optionss);
+
+            const k = await this.app.mysql.get('Advertisingspace', {ArticleID:db.id});
+            const d = moment().add(Number(k.timeNuber), 'd').format("YYYY-MM-DD HH:mm:ss")
+            await this.app.mysql.query(`update Advertisingspace set status = 0 , Expirationdate = + "${d.toString()}" where ArticleID = ${Number(db.id)}`);
+
+            const res = {
+                status: 0,
+                msg:"修改置顶成功",
+            }
+            return  res
+
         }
     }
     /**
@@ -479,6 +625,7 @@ class UsersController extends Controller {
      * @constructor
      */
     async MemberBuy(ctx){
+        const userinfo = this.app.jwt.verify(this.ctx.headers.authorization,this.app.config.jwt.secret)
         const money = ctx.request.body[1]
         const admina = await this.app.mysql.get('menber', {id:money,});
         const d = admina.price
@@ -498,7 +645,8 @@ class UsersController extends Controller {
                 commodityid:432423432,
                 status:1, //1未支付
                 out_trade_no:id,
-                typeId:money
+                typeId:money,
+                bindUserid:userinfo.username //所属用户账号
             });
         const res = await this.buyy(parameter)
         this.ctx.body = {
@@ -506,6 +654,7 @@ class UsersController extends Controller {
             payurl:res
         }
     }
+
     async MemberBuyPost(ctx){
         let formData = ctx.request.body
         const result = await this.app.curl(`http://pay.hackwl.cn/api.php?act=order&pid=23940&key=8yJ86Z4yu3o8NMyce6OepZxoNJXjK8NE&out_trade_no=${formData.out_trade_no}`,{dataType: 'json',})
@@ -516,20 +665,26 @@ class UsersController extends Controller {
             }
         }
     }
+
     async Membertype(){
         const data = await this.app.mysql.select('menber');
         this.ctx.body = {
                 data
         }
     }
+
     async buyy(parameter){
         let data={
             pid:"497886",
             money:parameter.price,
             name:parameter.name,
             notify_url:`http://tieba.yrun.top/pay`,//异步通知地址
+            // notify_url:"http://127.0.0.1:8089/pay",//异步通知地址
+
             out_trade_no:parameter.id, //订单号,自己生成。我是当前时间YYYYMMDDHHmmss再加上随机三位数
             return_url:"http://tieba.yrun.top/pay",//跳转通知地址
+            // return_url:"http://127.0.0.1:8089/pay",//异步通知地址
+
             sitename:"网站名称",
             type:parameter.paytype,//支付方式:alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通,
         }
