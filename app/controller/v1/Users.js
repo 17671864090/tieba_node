@@ -135,6 +135,10 @@ class UsersController extends Controller {
         console.log('执行定时任务')
 
         await this.ctx.app.runSchedule('visitUrl');
+        // await this.ctx.app.runSchedule('liulanliang');
+
+
+
     }
 }
 module.exports = UsersController;

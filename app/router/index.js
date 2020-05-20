@@ -9,6 +9,7 @@ module.exports = app =>{
     router.post('/api/admin/v1/Release',gzip, controller.admin.user.release);
     router.post('/api/admin/v1/userinfo',gzip, controller.admin.user.userinfo);//获取用户基本信息
     router.get('/api/admin/v1/topics', controller.admin.user.topics);//获取文字列表
+    router.get('/api/admin/v1/Topicssearch', controller.admin.user.Topicssearch);//获取文字列表
 
 
     router.post('/api/admin/v1/undatetopics', controller.admin.user.undatetopics);//获取文字列表

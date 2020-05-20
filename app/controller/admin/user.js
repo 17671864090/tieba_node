@@ -289,7 +289,7 @@ class UsersController extends Controller {
         }catch (e) {
             console.log(e)
             this.ctx.body = {
-                status: 501,
+                status: 5011,
                 message:'系统出错'
             }
         }
@@ -358,10 +358,11 @@ class UsersController extends Controller {
      */
     async topics(ctx){
 
+
         if(this.ctx.query.tab == 1){
-            var data = await this.app.mysql.query(`select * from article where status <> 1 order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+            var data = await this.app.mysql.query(`select * from article where status <> 1  order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
         }else{
-            var data = await this.app.mysql.query(`select * from article where status <> 1 and checked = ${this.ctx.query.tab} order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+            var data = await this.app.mysql.query(`select * from article where status <> 1 and checked = ${this.ctx.query.tab}    order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
         }
         for (let i=0;i<data.length;i++){
             if(data[i].Toptime != null){
@@ -389,6 +390,42 @@ class UsersController extends Controller {
             data
         }
     }
+
+    async Topicssearch(){
+
+
+        var data = await this.app.mysql.query(`select * from article where status <> 1 and content like '%${this.ctx.query.key}%' order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
+
+
+
+        for (let i=0;i<data.length;i++){
+            if(data[i].Toptime != null){
+                const AA = moment().format("YYYY-MM-DD HH:mm:ss");//当前时间
+                const BB = data[i].Toptime; //文章时间
+                const start_date = moment(AA,"YYYY-MM-DD HH:mm:ss");
+                const end_date = moment(BB,"YYYY-MM-DD HH:mm:ss");
+                const seconds = end_date.diff(start_date,"seconds");
+                if(seconds < 0){
+                    data[i].Topplacement = 0
+                    const row = {
+                        Topplacement: data[i].Topplacement,
+                        Toptime: null
+                    };
+                    const options = {
+                        where: {
+                            id: data[i].id
+                        }
+                    };
+                    await this.app.mysql.update('article', row, options);
+                }
+            }
+        }
+        this.ctx.body = {
+            data
+        }
+    }
+
+
     /**
      * 获取文章详情
      * @param ctx
@@ -626,8 +663,10 @@ class UsersController extends Controller {
      */
     async MemberBuy(ctx){
         const userinfo = this.app.jwt.verify(this.ctx.headers.authorization,this.app.config.jwt.secret)
-        const money = ctx.request.body[1]
-        const admina = await this.app.mysql.get('menber', {id:money,});
+        const menberid = ctx.request.body.id
+        const admina = await this.app.mysql.get('menber', {id:menberid,});
+
+
         const d = admina.price
         let id = (new Date()).valueOf()
         const parameter ={
@@ -637,7 +676,7 @@ class UsersController extends Controller {
             notify_url:'/api/admin/v1/MemberBuyPost',
             id:id
         }
-        const data = await this.app.mysql.insert('tbk_order',
+        await this.app.mysql.insert('tbk_order',
             {
                 name:"论坛会费",
                 price:Number(d),
@@ -645,7 +684,7 @@ class UsersController extends Controller {
                 commodityid:432423432,
                 status:1, //1未支付
                 out_trade_no:id,
-                typeId:money,
+                typeId:menberid,
                 bindUserid:userinfo.username //所属用户账号
             });
         const res = await this.buyy(parameter)
