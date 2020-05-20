@@ -33,7 +33,6 @@ class UsersController extends Controller {
         });
         this.ctx.body = result.data.data
     }
-
     /**
      * 获取注册数
      * @param ctx
@@ -60,7 +59,6 @@ class UsersController extends Controller {
             }
         }
     }
-
     /**
      * 用户佣金提现
      * @returns {Promise<void>}
@@ -136,8 +134,6 @@ class UsersController extends Controller {
 
         await this.ctx.app.runSchedule('visitUrl');
         // await this.ctx.app.runSchedule('liulanliang');
-
-
 
     }
 }

@@ -34,9 +34,6 @@ class UsersController extends Controller {
             {
                 tbk_user_Username:data.tbk_user_Username,
             });
-
-
-
         if(admina){
             this.ctx.body = {
                 status: 0,
@@ -51,7 +48,6 @@ class UsersController extends Controller {
             }
         }
     }
-
     /**
      * 登录
      * @returns {Promise<void>}
@@ -339,18 +335,35 @@ class UsersController extends Controller {
             const sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
             const data = await this.app.mysql.query(`select *  from tbk_user where tbk_user_Username = ${sec2.username}`);
 
-            const subordinate = await this.app.mysql.query(`select *  from tbk_user where invitation = ${sec2.username}`);
-
-            const info = await this.app.mysql.query(`select *  from article where userinfo = ${sec2.username} order by createtime desc`);
+            // const subordinate = await this.app.mysql.query(`select *  from tbk_user where invitation = ${sec2.username}`);
+            //
+            // const info = await this.app.mysql.query(`select *  from article where userinfo = ${sec2.username} order by createtime desc`);
             this.ctx.body = {
-                data,
-                info,
-                subordinate
+                data
+                // info,
+                // subordinate
             }
         }catch (e) {
             console.log(e)
         }
     }
+
+    async UserArticle(ctx){
+        const sec2 = this.app.jwt.verify(ctx.headers.authorization,this.app.config.jwt.secret)
+        const info = await this.app.mysql.query(`select *  from article where userinfo = ${sec2.username} order by createtime desc`);
+        this.ctx.body = info
+    }
+
+    async UserCustomer(ctx){
+        const sec2 = this.app.jwt.verify(ctx.headers.authorization,this.app.config.jwt.secret)
+        const subordinate = await this.app.mysql.query(`select *  from tbk_user where invitation = ${sec2.username}`);
+        this.ctx.body = subordinate
+    }
+
+
+
+
+
     /**
      * 获取文章
      * @param ctx
@@ -392,11 +405,7 @@ class UsersController extends Controller {
     }
 
     async Topicssearch(){
-
-
         var data = await this.app.mysql.query(`select * from article where status <> 1 and content like '%${this.ctx.query.key}%' order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
-
-
 
         for (let i=0;i<data.length;i++){
             if(data[i].Toptime != null){
@@ -424,8 +433,6 @@ class UsersController extends Controller {
             data
         }
     }
-
-
     /**
      * 获取文章详情
      * @param ctx
@@ -551,7 +558,6 @@ class UsersController extends Controller {
                 var price = (Number(user.Rechargequota) * 1000 + Number(data.price) * 1000)/1000
             }
         }
-
         if(data.commodityid ==432423432){
             try{
                 const db = await this.app.mysql.get('MemberSetmeal',{id:data.typeId});
@@ -721,8 +727,8 @@ class UsersController extends Controller {
             // notify_url:"http://127.0.0.1:8089/pay",//异步通知地址
 
             out_trade_no:parameter.id, //订单号,自己生成。我是当前时间YYYYMMDDHHmmss再加上随机三位数
-            return_url:"http://tieba.yrun.top/pay",//跳转通知地址
-            // return_url:"http://127.0.0.1:8089/pay",//异步通知地址
+            // return_url:"http://tieba.yrun.top/pay",//跳转通知地址
+            return_url:"http://127.0.0.1:8089/pay",//异步通知地址
 
             sitename:"网站名称",
             type:parameter.paytype,//支付方式:alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通,

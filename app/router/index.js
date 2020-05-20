@@ -12,6 +12,18 @@ module.exports = app =>{
     router.get('/api/admin/v1/Topicssearch', controller.admin.user.Topicssearch);//获取文字列表
 
 
+
+    router.get('/api/admin/v1/UserArticle', controller.admin.user.UserArticle);//个人中心 获取帖子
+    router.get('/api/admin/v1/UserCustomer', controller.admin.user.UserCustomer);//个人中心 获取下级
+
+
+
+
+    router.get('/api/admin/v1/Topicssearch', controller.admin.user.Topicssearch);//获取文字列表
+
+
+
+
     router.post('/api/admin/v1/undatetopics', controller.admin.user.undatetopics);//获取文字列表
 
 
