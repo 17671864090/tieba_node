@@ -720,7 +720,7 @@ class UsersController extends Controller {
             // return_url:"http://tieba.yrun.top/pay",//跳转通知地址
             return_url:"http://127.0.0.1:8089/pay",//异步通知地址
 
-            sitename:"网站名称",
+            sitename:"防疫论坛",
             type:parameter.paytype,//支付方式:alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通,
         }
         //参数进行排序拼接字符串(非常重要)
@@ -772,7 +772,7 @@ class UsersController extends Controller {
             out_trade_no:idd, //订单号,自己生成。我是当前时间YYYYMMDDHHmmss再加上随机三位数
             return_url:"http://tieba.yrun.top/pay",//跳转通知地址
             // return_url:"http://127.0.0.1:8089/pay",//跳转通知地址
-            sitename:"网站名称",
+            sitename:"防疫论坛",
             type:paytype,//支付方式:alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通,
         }
         //参数进行排序拼接字符串(非常重要)
