@@ -717,8 +717,8 @@ class UsersController extends Controller {
             // notify_url:"http://127.0.0.1:8089/pay",//异步通知地址
 
             out_trade_no:parameter.id, //订单号,自己生成。我是当前时间YYYYMMDDHHmmss再加上随机三位数
-            // return_url:"http://tieba.yrun.top/pay",//跳转通知地址
-            return_url:"http://127.0.0.1:8089/pay",//异步通知地址
+            return_url:"http://tieba.yrun.top/pay",//跳转通知地址
+            // return_url:"http://127.0.0.1:8089/pay",//异步通知地址
 
             sitename:"防疫论坛",
             type:parameter.paytype,//支付方式:alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通,
