@@ -315,7 +315,7 @@ class UsersController extends Controller {
                 const seconds = end_date.diff(start_date,"seconds");
                 if(seconds < 0){
 
-                    // await this.app.mysql.delete('Advertisingspace', {id: data[i].id});
+                    await this.app.mysql.delete('Advertisingspace', {id: data[i].id});
 
                     await this.app.mysql.query(`update article set  Topplacement = 0  where id = ${data[i].id}`);
                 }
@@ -347,31 +347,22 @@ class UsersController extends Controller {
             console.log(e)
         }
     }
-
     async UserArticle(ctx){
         const sec2 = this.app.jwt.verify(ctx.headers.authorization,this.app.config.jwt.secret)
         const info = await this.app.mysql.query(`select *  from article where userinfo = ${sec2.username} order by createtime desc`);
         this.ctx.body = info
     }
-
     async UserCustomer(ctx){
         const sec2 = this.app.jwt.verify(ctx.headers.authorization,this.app.config.jwt.secret)
         const subordinate = await this.app.mysql.query(`select *  from tbk_user where invitation = ${sec2.username}`);
         this.ctx.body = subordinate
     }
-
-
-
-
-
     /**
      * 获取文章
      * @param ctx
      * @returns {Promise<void>}
      */
     async topics(ctx){
-
-
         if(this.ctx.query.tab == 1){
             var data = await this.app.mysql.query(`select * from article where status <> 1  order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
         }else{
@@ -403,7 +394,6 @@ class UsersController extends Controller {
             data
         }
     }
-
     async Topicssearch(){
         var data = await this.app.mysql.query(`select * from article where status <> 1 and content like '%${this.ctx.query.key}%' order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
 

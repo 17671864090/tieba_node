@@ -25,7 +25,6 @@ module.exports = app => {
 
 
 
-
     router.get('/api/v1/admin/schedule', controller.v1.users.schedule);
 
 
