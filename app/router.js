@@ -13,11 +13,6 @@ module.exports = app => {
   // router.post('/topics', topic.put);
 
 
-  //支付系统
-  router.post('/alipay', controller.pay.index);
-
-
-
 
 
 
