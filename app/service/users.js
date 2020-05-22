@@ -9,6 +9,23 @@ class UserService extends Service {
         const result = await this.app.mysql.insert('tbk_user', data);
         console.log(result)
     }
+
+
+    /**
+     * 根据 token 查到用户
+     * @param accessToken
+     */
+    getUserByToken(accessToken){
+        const query = { accessToken };
+
+
+        return this.ctx.mysql.get('tbk_user',)
+
+    }
+
+
+
+
 }
 
 module.exports = UserService;

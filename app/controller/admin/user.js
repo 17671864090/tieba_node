@@ -255,9 +255,7 @@ class UsersController extends Controller {
                     }
                 }
             }else{
-
                 const Info = await this.app.mysql.get('tbk_user', {tbk_user_Username:sec2.username});
-
                 if(Info.PostingNumber > 0){
                     data.Topplacement = 0
                     data.status = 0
@@ -394,6 +392,8 @@ class UsersController extends Controller {
             data
         }
     }
+
+
     async Topicssearch(){
         var data = await this.app.mysql.query(`select * from article where status <> 1 and content like '%${this.ctx.query.key}%' order by Topplacement desc , createtime desc  limit 10 offset ${Number(this.ctx.query.page) * 10}`);
 
@@ -539,7 +539,7 @@ class UsersController extends Controller {
         const token = this.ctx.headers.authorization;
         const sec2 = this.app.jwt.verify(token,this.app.config.jwt.secret)
         const user = await this.app.mysql.get('tbk_user', {tbk_user_Username: sec2.username});
-        const i = (Number(data.price) * 1000 * 0.1)/1000
+        const i = (Number(data.price) * 1000 * 0.6)/1000
         if(data.superiorentry == 1){
             var price = (Number(user.Rechargequota))
         }else{
