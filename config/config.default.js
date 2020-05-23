@@ -50,6 +50,19 @@ module.exports = appInfo => {
   config.jwt = {
     secret: "143700"
   };
+
+  config.alinode = {
+    server: 'wss://agentserver.node.aliyun.com:8080',
+    appid: '84960',
+    secret: 'bdd02fdf6d94b9f3834ffdf8e5452e931fdce1ec',
+    logdir: '/tmp/',
+    error_log: [],
+    agentidMode:'IP'
+
+  }
+
+
+
   return {
     ...config,
     ...userConfig,

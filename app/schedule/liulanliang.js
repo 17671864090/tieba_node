@@ -6,7 +6,7 @@ class UpdateCache extends Subscription {
     // 通过 schedule 属性来设置定时任务的执行间隔等配置
     static get schedule() {
         return {
-            interval: '10m', //
+            interval: '1m', //
             type: 'worker', // 指定所有的 worker 都需要执行
         };
     }
@@ -28,9 +28,8 @@ class UpdateCache extends Subscription {
                         break;
                 }
             }
-            const nuber = randomNum(1,4)
+            const nuber = randomNum(10,30)
             const data = await this.app.mysql.query(`update article set  visit_count = visit_count + ${nuber}  where id = ${pp[i].id}`);
-            console.log(data)
         }
     }
 }

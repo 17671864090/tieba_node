@@ -23,4 +23,9 @@ module.exports = {
         package: "egg-jwt"
     },
 
+    alinode:{
+        enable: true,
+        package: 'egg-alinode'
+    }
+
 };
